@@ -1,0 +1,29 @@
+# The `tool.before` guard: blocks bare find/grep and rg flag misuse
+# in pending bash tool calls. Ported from the Claude Code plugin
+# TonyWu20/no-find-grep and the pi extension no-find-grep.ts.
+#
+# Bootstrap split (docs/tui-ext-repo-split.md section 4): the hook
+# is a standalone cargo package. The empty [workspace] table stops
+# cargo from attaching it to an ancestor workspace.
+#
+# Build: `cargo build` in this directory. The binary lands in
+# ./target/debug/harness-hook-no-find-grep. The loop resolves the
+# bare name from config.toml [hooks] on PATH; ext-env.sh puts the
+# target dir on PATH.
+
+[package]
+name = "hook-no-find-grep"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[[bin]]
+name = "harness-hook-no-find-grep"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = "1.0"
+regex = "1"
+
+[dev-dependencies]
