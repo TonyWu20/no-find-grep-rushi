@@ -9,25 +9,21 @@
 //! crate has no lookahead, so `(?=\s|$)` becomes `(\s|$)`. The
 //! match semantics are equivalent for `is_match()`.
 
-use std::sync::OnceLock;
 use regex::Regex;
+use std::sync::OnceLock;
 
 // ── Regex patterns (ported from block-find-grep.sh / no-find-grep.ts) ────
 
 /// Bare `find` at command start or after pipe/separator.
 fn bare_find() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"(^|[|;&$()]+\s*)find(\s|$)").unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r"(^|[|;&$()]+\s*)find(\s|$)").unwrap())
 }
 
 /// Bare `grep` at command start or after pipe/separator.
 fn bare_grep() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"(^|[|;&$()]+\s*)grep(\s|$)").unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r"(^|[|;&$()]+\s*)grep(\s|$)").unwrap())
 }
 
 /// Capture the first pipeline segment that starts with `rg`.
@@ -35,35 +31,27 @@ fn bare_grep() -> &'static Regex {
 /// checks below can see it.
 fn rg_segment() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"(?:^|[|;&$()]+\s*)rg\b(?:\\\||[^|;&$()])*").unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r"(?:^|[|;&$()]+\s*)rg\b(?:\\\||[^|;&$()])*").unwrap())
 }
 
 /// `rg -r<letter>`: `-r` means `--replace` in rg, not `--recursive`.
 fn rg_r_flag() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"(?:^|\s)-r[a-zA-Z]").unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r"(?:^|\s)-r[a-zA-Z]").unwrap())
 }
 
 /// `rg -L` standalone: `-L` means `--follow` in rg, not
 /// `--files-without-match`.
 fn rg_l_flag() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"(?:^|\s)-L(?:\s|$)").unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r"(?:^|\s)-L(?:\s|$)").unwrap())
 }
 
 /// `rg \|`: escaped pipe matches a literal pipe in rg; use `|`
 /// for alternation.
 fn rg_escaped_pipe() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"\\\|").unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r"\\\|").unwrap())
 }
 
 // ── Check functions ─────────────────────────────────────────────────────
@@ -76,7 +64,6 @@ pub fn check_bare_find(cmd: &str) -> Option<String> {
     if bare_find().is_match(cmd) {
         return Some(format!(
             "BARE find DETECTED! Use fd (or fdfind on Debian/Ubuntu) instead of find!\n\
-             READ YOUR CLAUDE.md: fd (or fdfind), NOT find!\n\
              Your command: {cmd}\n\
              Fix: replace 'find' with 'fd' (or 'fdfind' on Debian/Ubuntu)"
         ));
@@ -92,7 +79,6 @@ pub fn check_bare_grep(cmd: &str) -> Option<String> {
     if bare_grep().is_match(cmd) {
         return Some(format!(
             "BARE grep DETECTED! Use rg instead of grep!\n\
-             READ YOUR CLAUDE.md: rg, NOT grep!\n\
              Your command: {cmd}\n\
              Fix: replace 'grep' with 'rg'"
         ));
@@ -136,7 +122,7 @@ pub fn check_rg_misuse(cmd: &str) -> Option<String> {
     if rg_escaped_pipe().is_match(seg) {
         return Some(format!(
             "ESCAPED PIPE IN rg DETECTED! \\| means literal pipe in rg!\n\
-             READ YOUR CLAUDE.md: rg uses | for alternation, NOT \\|!\n\
+             rg uses | for alternation, NOT \\|!\n\
              Your command: {cmd}\n\
              Fix: replace '\\|' with '|' in your rg pattern"
         ));
