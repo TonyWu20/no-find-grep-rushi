@@ -49,14 +49,30 @@
               cargoLock = { lockFile = crateLock; };
               doCheck = false;
             };
+
+          # Base hook package (guide §4.2): a bare buildRustPackage result
+          # IS the hook source — $out/bin/harness-hook-no-find-grep is
+          # exactly what mk-rushi's hook copy step expects. Bound here (a
+          # `let` binding) because `let … in` is not a legal attr value
+          # inside the rec {} below; the rec attr then merges meta.rushi
+          # onto it.
+          hookBase = buildCrate {
+            crateDir = ".";
+            crateName = "hook-no-find-grep";
+          };
         in
         # ── Hook (guide §4.2): a bare buildRustPackage result IS the
         #    hook source — $out/bin/harness-hook-no-find-grep is exactly
         #    what mk-rushi's hook copy step expects. No wrapper needed.
+        #
+        #    meta.rushi.bin (rushi#13): the runtime binary name, so a
+        #    consumer can derive hook commands without a second typed
+        #    copy. The merge preserves any meta buildRustPackage set.
         rec {
-          hook-no-find-grep = buildCrate {
-            crateDir = ".";
-            crateName = "hook-no-find-grep";
+          hook-no-find-grep = hookBase // {
+            meta = (hookBase.meta or { }) // {
+              rushi = { bin = "harness-hook-no-find-grep"; };
+            };
           };
 
           default = hook-no-find-grep;
