@@ -15,7 +15,7 @@
       # kernel flake (packages.<system>.<name>): the transposed layout
       # eachDefaultSystem would produce, without its breakage
       # (docs/reference/nix/ext-flake-authoring.md §3).
-      supportedSystems = [ "x86_64-linux" "aarch64-linux" ];
+      supportedSystems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
       pkgLib = nixpkgs.lib;
 
       buildFor = system:
@@ -25,7 +25,12 @@
             overlays = [ fenix.overlays.default ];
           };
           rustToolchain = fenix.packages.${system}.stable.withComponents [
-            "cargo" "clippy" "rust-src" "rustc" "rustfmt" "rust-analyzer"
+            "cargo"
+            "clippy"
+            "rust-src"
+            "rustc"
+            "rustfmt"
+            "rust-analyzer"
           ];
 
           # Build one standalone cargo crate from a subpath of this
@@ -38,8 +43,8 @@
             let
               # Root crate: path literals (relative to the flake source).
               # Sub-crate: string interpolation against the flake source.
-              crateSrc  = if crateDir == "." then ./.           else "${self}/${crateDir}";
-              crateLock = if crateDir == "." then ./Cargo.lock  else "${self}/${crateDir}/Cargo.lock";
+              crateSrc = if crateDir == "." then ./. else "${self}/${crateDir}";
+              crateLock = if crateDir == "." then ./Cargo.lock else "${self}/${crateDir}/Cargo.lock";
             in
             pkgs.rustPlatform.buildRustPackage {
               pname = crateName;
@@ -62,12 +67,12 @@
           };
         in
         # ── Hook (guide §4.2): a bare buildRustPackage result IS the
-        #    hook source — $out/bin/harness-hook-no-find-grep is exactly
-        #    what mk-rushi's hook copy step expects. No wrapper needed.
-        #
-        #    meta.rushi.bin (rushi#13): the runtime binary name, so a
-        #    consumer can derive hook commands without a second typed
-        #    copy. The merge preserves any meta buildRustPackage set.
+          #    hook source — $out/bin/harness-hook-no-find-grep is exactly
+          #    what mk-rushi's hook copy step expects. No wrapper needed.
+          #
+          #    meta.rushi.bin (rushi#13): the runtime binary name, so a
+          #    consumer can derive hook commands without a second typed
+          #    copy. The merge preserves any meta buildRustPackage set.
         rec {
           hook-no-find-grep = hookBase // {
             meta = (hookBase.meta or { }) // {
