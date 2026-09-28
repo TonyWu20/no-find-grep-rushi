@@ -2,11 +2,11 @@
 //! `find`/`grep` commands and common `rg` flag misuse.
 //!
 //! Registered on the `tool.before` window. Reads the pending tool
-//! batch from stdin (JSON), inspects each `bash` call, and emits a
-//! JSON decision on stdout:
+//! batch from stdin (JSON), inspects each `bash` call, and emits the
+//! window state on stdout:
 //!
-//! - `{}` — proceed (window default, no decision).
-//! - `{"decision":"block","payload":{"reason":..., "calls":[...]}}`
+//! - `{}` — proceed (window default, no state).
+//! - `{"blocked_calls":[{"id":..., "reason":...}]}`
 //!   — block the listed calls; the loop synthesizes a failed
 //!   `tool_result` for each.
 //!
@@ -72,23 +72,8 @@ fn main() {
         return;
     }
 
-    let ids: Vec<String> = blocked
-        .iter()
-        .map(|b| b.get("id").and_then(|i| i.as_str()).unwrap_or("").to_string())
-        .collect();
-    let reasons: Vec<String> = blocked
-        .iter()
-        .map(|b| b.get("reason").and_then(|r| r.as_str()).unwrap_or("blocked").to_string())
-        .collect();
-
-    let resp = json!({
-        "decision": "block",
-        "payload": {
-            "reason": reasons.join(" "),
-            "calls": ids,
-        }
-    });
-    println!("{}", resp);
+    let resp = json!({ "blocked_calls": blocked });
+    println!("{resp}");
 }
 
 fn read_stdin_json() -> serde_json::Value {
@@ -113,7 +98,7 @@ fn print_help() {
     println!("Output (stdout):");
     println!("  {{}}  — proceed (no violations)");
     println!(
-        "  {{\"decision\":\"block\",\"payload\":{{\"reason\":...,\"calls\":[...]}}}} — block listed calls"
+        "  {{\"blocked_calls\":[{{\"id\":...,\"reason\":...}}]}} — block listed calls"
     );
     println!("Exit codes: 0 = ok");
 }
